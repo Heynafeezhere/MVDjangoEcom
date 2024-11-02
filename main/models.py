@@ -42,7 +42,7 @@ class ProductCategory(models.Model):
 #Product Model
 class Product(models.Model):
      # Basic Information
-    category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL,null=True)
+    category = models.ForeignKey(ProductCategory, on_delete=models.SET_NULL,null=True,related_name='product_category')
     vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL,null=True)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -51,3 +51,63 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    
+#Customer Model
+class Customer(models.Model):
+    # Basic customer details
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    phone =  PhoneNumberField(null=False, blank=False, unique=True)
+
+    # Address
+    address_line1 = models.CharField(max_length=255)
+    address_line2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    zip_code = models.CharField(max_length=10)
+    country = models.CharField(max_length=100)
+
+    # Additional fields
+    date_joined = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.user.username
+
+#Order Model
+class Order(models.Model):
+    # Link to Customer
+    customer = models.ForeignKey(Customer,on_delete=models.CASCADE)
+    
+    # Order details
+    order_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('processed', 'Processed'),
+            ('shipped', 'Shipped'),
+            ('delivered', 'Delivered'),
+            ('canceled', 'Canceled')
+        ],
+        default='pending'
+    )
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+#Order Item Model
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE,related_name='order_items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    
+

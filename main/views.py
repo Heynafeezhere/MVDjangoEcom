@@ -21,5 +21,26 @@ class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serilaizers.ProductDetailSerializer
 
+class CustomerList(generics.ListCreateAPIView):
+    queryset = models.Customer.objects.all()
+    serializer_class = serilaizers.CustomerSerializer
+    # permission_classes = (permissions.IsAuthenticated,)
+
+class CustomerDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = models.Customer.objects.all()
+    serializer_class = serilaizers.CustomerDetailSerializer
+
+class orderList(generics.ListCreateAPIView):
+    queryset = models.Order.objects.all()
+    serializer_class = serilaizers.OrderSerializer
+
+class orderDetail(generics.ListAPIView):
+    # queryset = models.OrderItem.objects.all()
+    serializer_class = serilaizers.OrderDetailSerializer
+
+    def get_queryset(self):
+        order_id = self.kwargs['pk']
+        filtered_order = models.Order.objects.get(id=order_id)
+        return models.OrderItem.objects.filter(order=filtered_order)
 
     
