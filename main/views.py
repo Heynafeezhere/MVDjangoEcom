@@ -1,4 +1,4 @@
-from rest_framework import generics,permissions
+from rest_framework import generics,permissions,viewsets
 from django.shortcuts import render
 from . import serilaizers
 from . import models
@@ -43,4 +43,6 @@ class orderDetail(generics.ListAPIView):
         filtered_order = models.Order.objects.get(id=order_id)
         return models.OrderItem.objects.filter(order=filtered_order)
 
-    
+class CustomerAddressViewSet(viewsets.ModelViewSet):
+    queryset = models.CustomerAddress.objects.all()
+    serializer_class = serilaizers.CustomerAddressSerializer

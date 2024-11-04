@@ -58,14 +58,6 @@ class Customer(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     phone =  PhoneNumberField(null=False, blank=False, unique=True)
 
-    # Address
-    address_line1 = models.CharField(max_length=255)
-    address_line2 = models.CharField(max_length=255, blank=True)
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
-    zip_code = models.CharField(max_length=10)
-    country = models.CharField(max_length=100)
-
     # Additional fields
     date_joined = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
@@ -97,6 +89,9 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __unicode__(self):
+        return '%s' % (self.order_date)
+
 #Order Item Model
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE,related_name='order_items')
@@ -109,5 +104,27 @@ class OrderItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    
+    def __str__(self):
+        return self.product.name
 
+#Customer Address Model
+class CustomerAddress(models.Model):
+    # Link to Customer
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE,related_name="customer_addresses")
+
+    primaryAddress = models.BooleanField(default=False)
+
+    # Address
+    address_line1 = models.CharField(max_length=255)
+    address_line2 = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    zip_code = models.CharField(max_length=10)
+    country = models.CharField(max_length=100)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.address_line1
