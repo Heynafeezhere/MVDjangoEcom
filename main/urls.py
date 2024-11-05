@@ -5,8 +5,8 @@ from . import views
 from rest_framework import routers
 
 routers = routers.DefaultRouter()
-
-routers.register('address', views.CustomerAddressViewSet)
+routers.register('addresses', views.CustomerAddressViewSet)
+routers.register('productratings', views.ProductRatingViewSet)
 
 urlpatterns = [
     path('vendors/', views.VendorList.as_view(), name='VendorList'),

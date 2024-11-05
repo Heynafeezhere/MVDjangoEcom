@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from phonenumber_field.modelfields import PhoneNumberField
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 # Vendor Model.
 class Vendor(models.Model):
@@ -127,4 +128,22 @@ class CustomerAddress(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.address_line1
+        return f'{self.address_line1}'
+
+#Product Ratings and Reviews
+class ProductRating(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='rating_customer')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_ratings')
+    
+    title = models.CharField(max_length=100)
+    
+    review = models.TextField()
+    rating = models.PositiveIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'Customer : {self.customer.user.username} - {self.title} - {self.rating}'
