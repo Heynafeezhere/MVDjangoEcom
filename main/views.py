@@ -23,6 +23,19 @@ class ProductList(generics.ListCreateAPIView):
         if category is not None:
             qs = qs.filter(category = category)
         return qs
+    
+class TaggedProductList(generics.ListCreateAPIView):
+    queryset = models.Product.objects.all()
+    serializer_class = serilaizers.ProductListSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        tag = self.kwargs.get('tag')  # Use .get() to avoid KeyError
+        # If a tag is provided, filter products based on the tag in the tags field
+        if tag:
+            qs = qs.filter(tags__icontains=tag)  # Case-insensitive search within the tags field
+        
+        return qs
 
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
