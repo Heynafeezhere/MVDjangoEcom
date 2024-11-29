@@ -36,6 +36,21 @@ class TaggedProductList(generics.ListCreateAPIView):
             qs = qs.filter(tags__icontains=tag)  # Case-insensitive search within the tags field
         
         return qs
+    
+class RelatedProductList(generics.ListCreateAPIView):
+    queryset = models.Product.objects.all()
+    serializer_class = serilaizers.ProductListSerializer
+    pagination_class = None
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        product_id = self.kwargs.get('pk')  # Use .get() to avoid KeyError
+        actualProduct = models.Product.objects.get(id=product_id)
+        # If a tag is provided, filter products based on the tag in the tags field
+        if actualProduct:
+            qs = qs.filter(category=actualProduct.category).exclude(id=product_id)  # Case-insensitive search within the tags field
+        
+        return qs
 
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
