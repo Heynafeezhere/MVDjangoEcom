@@ -52,6 +52,7 @@ class Product(models.Model):
     tags = models.TextField(null=True,blank=True)
     stock_quantity = models.PositiveIntegerField(default=0)
     image = models.ImageField(upload_to='product_images/',null=True,blank=True)
+    demoLink = models.URLField(null=True,blank=True)
 
     def __str__(self):
         return self.name
