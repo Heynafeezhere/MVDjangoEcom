@@ -66,6 +66,12 @@ class OrderDetailSerializer(serializers.ModelSerializer):
         fields = ['id','order','product','quantity','unit_price','created_at','updated_at']
         depth = 1
 
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.OrderItem
+        fields = ['id','order','product','quantity','unit_price','created_at','updated_at']
+        depth = 1
+
 
 class CustomerAddressSerializer(serializers.ModelSerializer):
     class Meta:

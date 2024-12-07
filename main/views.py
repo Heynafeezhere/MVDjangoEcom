@@ -1,4 +1,6 @@
+import json
 from django.http import JsonResponse
+from django.db import transaction
 from rest_framework import generics,permissions,viewsets
 from django.shortcuts import render
 from . import serilaizers
@@ -14,7 +16,7 @@ class VendorList(generics.ListCreateAPIView):
 class VendorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Vendor.objects.all()
     serializer_class = serilaizers.VendorDetailSerializer
-    
+
 class ProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serilaizers.ProductListSerializer
@@ -25,7 +27,7 @@ class ProductList(generics.ListCreateAPIView):
         if category is not None:
             qs = qs.filter(category = category)
         return qs
-    
+
 class TaggedProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serilaizers.ProductListSerializer
@@ -36,14 +38,14 @@ class TaggedProductList(generics.ListCreateAPIView):
         # If a tag is provided, filter products based on the tag in the tags field
         if tag:
             qs = qs.filter(tags__icontains=tag)  # Case-insensitive search within the tags field
-        
+
         return qs
-    
+
 class RelatedProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serilaizers.ProductListSerializer
     pagination_class = None
-    
+
     def get_queryset(self):
         qs = super().get_queryset()
         product_id = self.kwargs.get('pk')  # Use .get() to avoid KeyError
@@ -51,7 +53,7 @@ class RelatedProductList(generics.ListCreateAPIView):
         # If a tag is provided, filter products based on the tag in the tags field
         if actualProduct:
             qs = qs.filter(category=actualProduct.category).exclude(id=product_id)  # Case-insensitive search within the tags field
-        
+
         return qs
 
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -73,17 +75,18 @@ def customerLogin(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
-        
+
         user_obj = models.User.objects.filter(email=email.lower()).first()
-        
+
         if user_obj:
             username = user_obj.username
             user = authenticate(username=username, password=password)
-            
+
             if user is not None:
                 return JsonResponse(
                     {
                         'bool': True,
+                        'userId': user.id,
                         'user': user.username
                     },
                     status=200  # HTTP status code 200 for successful authentication
@@ -113,11 +116,11 @@ def customerRegister(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         phoneNumber = request.POST.get('phoneNumber')
-        
+
         user_email = models.User.objects.filter(email=email.lower()).first()
         user_name = models.User.objects.filter(username=userName.lower()).first()
         phoneNumberCheck = models.Customer.objects.filter(phone=phoneNumber).first()
-        
+
         if user_email :
             return JsonResponse(
                 {
@@ -139,7 +142,7 @@ def customerRegister(request):
                 },
                 status=400  # HTTP status code 400 for bad request
             )
-        
+
         user = models.User.objects.create_user(
             username=userName,
             email=email,
@@ -154,17 +157,18 @@ def customerRegister(request):
             phone = phoneNumber
         )
         customer.save()
-        
+
         return JsonResponse(
             {
                 'bool': True,
                 'user': user.username,
+                'userId': user.id,
                 'message': 'User registered successfully'
             },
             status=201  # HTTP status code 201 for successful resource creation
         )
-                   
-                
+
+
 class orderList(generics.ListCreateAPIView):
     queryset = models.Order.objects.all()
     serializer_class = serilaizers.OrderSerializer
@@ -177,6 +181,103 @@ class orderDetail(generics.ListAPIView):
         order_id = self.kwargs['pk']
         filtered_order = models.Order.objects.get(id=order_id)
         return models.OrderItem.objects.filter(order=filtered_order)
+@csrf_exempt
+def orderRequestHandler(request):
+    if request.method == 'POST':
+        userId = request.POST.get('customer')
+        total_amount = request.POST.get('total_amount')
+        print(userId)
+        user = models.User.objects.filter(id=userId).first()
+        if(user == None): 
+            return JsonResponse(
+                {
+                    'error': 'User not found'
+                },
+                status=404  # HTTP status code 404 for user not found
+            )
+        customer = models.Customer.objects.filter(user=user).first()
+        if(customer == None):
+            return JsonResponse(
+                {
+                    'error': 'User is not a customer'
+                },
+                status=404  # HTTP status code 404 for user not found
+            )
+        order = models.Order.objects.create(customer=customer, status='pending', total_amount=total_amount)
+        order.save()
+
+        return JsonResponse(
+            {
+                'bool': True,
+                'orderId': order.id
+            },
+            status=200  # HTTP status code 200 for successful order
+        )
+
+@csrf_exempt
+def orderItemRequestHandler(request):
+   if request.method == 'POST':
+        # Read the JSON body of the request
+        data = json.loads(request.body)
+
+        # Get the order item array from the payload
+        order_item_array = data.get('order', [])
+        if not order_item_array:
+            return JsonResponse({'error': 'No order items provided'}, status=400)
+
+        # Extract order ID from the first item (assuming all items belong to the same order)
+        orderId = order_item_array[0].get('orderId')
+
+        # Fetch the order from the database in a single query
+        order = models.Order.objects.filter(id=orderId).first()
+        if order is None:
+            return JsonResponse({'error': 'Order not found'}, status=404)
+
+        # Collect all product IDs to fetch them in one query
+        product_ids = [item['productId'] for item in order_item_array]
+        products = models.Product.objects.filter(id__in=product_ids)
+
+        # Create a dictionary for fast lookup by productId
+        product_dict = {product.id: product for product in products}
+
+        # Prepare a list to hold OrderItem instances for bulk creation
+        order_items_to_create = []
+
+        for item in order_item_array:
+            productId = item.get('productId')
+            quantity = item.get('quantity')
+            unit_price = item.get('unit_price')
+
+            # Check if product exists
+            product = product_dict.get(productId)
+            if not product:
+                return JsonResponse(
+                    {'error': f'Product with ID {productId} not found'},
+                    status=404
+                )
+
+            # Create the OrderItem instance and append to the list
+            order_items_to_create.append(
+                models.OrderItem(
+                    order=order,
+                    product=product,
+                    quantity=quantity,
+                    unit_price=unit_price
+                )
+            )
+
+        # Use Django's bulk_create to insert all the OrderItems in one go
+        with transaction.atomic():  # Ensure atomicity of the operation
+            models.OrderItem.objects.bulk_create(order_items_to_create)
+
+        # Return a success response
+        return JsonResponse(
+            {'bool': True, 'message': 'Order items created successfully'},
+            status=200
+        )
+
+
+        
 
 class CustomerAddressViewSet(viewsets.ModelViewSet):
     queryset = models.CustomerAddress.objects.all()
