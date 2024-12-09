@@ -181,6 +181,20 @@ class orderDetail(generics.ListAPIView):
         order_id = self.kwargs['pk']
         filtered_order = models.Order.objects.get(id=order_id)
         return models.OrderItem.objects.filter(order=filtered_order)
+
+class customerOrderItemList(generics.ListAPIView):
+    queryset = models.OrderItem.objects.all()
+    serializer_class = serilaizers.OrderItemSerializer
+
+    # print(queryset)
+    def get_queryset(self):
+        qs = super().get_queryset()
+        customer_id = self.kwargs['pk']
+        qs = qs.filter(order__customer__user__id=customer_id)
+        qs = qs.order_by('-updated_at')
+        return qs
+    
+    
 @csrf_exempt
 def orderRequestHandler(request):
     if request.method == 'POST':
@@ -284,8 +298,6 @@ def updateOrderStatusHandler(request):
         orderStatus = data.get('orderStatus')
         transaction_id = data.get('transactionId')
         payment_method = data.get('paymentMethod')
-
-        print(orderId, orderStatus, transaction_id)
 
         order = models.Order.objects.filter(id=orderId).first()
         if order is None:
