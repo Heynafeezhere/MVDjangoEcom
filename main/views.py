@@ -7,6 +7,7 @@ from . import serilaizers
 from . import models
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
+from . import CustomPaginations
 # Create your views here.
 class VendorList(generics.ListCreateAPIView):
     queryset = models.Vendor.objects.all()
@@ -26,6 +27,8 @@ class ProductList(generics.ListCreateAPIView):
         category = self.request.query_params.get('category_id')
         if category is not None:
             qs = qs.filter(category = category)
+        if 'fetch_limit' in self.request.query_params:
+            qs = qs[:int(self.request.query_params['fetch_limit'])]
         return qs
 
 class TaggedProductList(generics.ListCreateAPIView):
@@ -53,7 +56,7 @@ class RelatedProductList(generics.ListCreateAPIView):
         # If a tag is provided, filter products based on the tag in the tags field
         if actualProduct:
             qs = qs.filter(category=actualProduct.category).exclude(id=product_id)  # Case-insensitive search within the tags field
-
+            qs = qs.order_by('-updated_at')
         return qs
 
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -185,6 +188,7 @@ class orderDetail(generics.ListAPIView):
 class customerOrderItemList(generics.ListAPIView):
     queryset = models.OrderItem.objects.all()
     serializer_class = serilaizers.OrderItemSerializer
+    pagination_class = CustomPaginations.CustomOrderItemListPagination
 
     # print(queryset)
     def get_queryset(self):
@@ -322,6 +326,13 @@ class CategoryList(generics.ListCreateAPIView):
     serializer_class = serilaizers.CategorySerializer
     # permission_classes = (permissions.IsAuthenticated,)
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        qs = qs.order_by('-updated_at')
+        if 'fetch_limit' in self.request.query_params:
+            qs = qs[:int(self.request.query_params['fetch_limit'])]
+        return qs
+    
 class CategoryDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.ProductCategory.objects.all()
     serializer_class = serilaizers.CategoryDetailSerializer
