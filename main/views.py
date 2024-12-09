@@ -276,8 +276,26 @@ def orderItemRequestHandler(request):
             status=200
         )
 
+@csrf_exempt
+def updateOrderStatusHandler(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        orderId = data.get('orderId')
+        orderStatus = data.get('orderStatus')
+        transaction_id = data.get('transactionId')
+        payment_method = data.get('paymentMethod')
 
-        
+        print(orderId, orderStatus, transaction_id)
+
+        order = models.Order.objects.filter(id=orderId).first()
+        if order is None:
+            return JsonResponse({'error': 'Order not found'}, status=404)
+
+        order.status = orderStatus
+        order.transaction_id = transaction_id
+        order.save()
+
+        return JsonResponse({'bool': True, 'message': 'Order status updated successfully'}, status=200)
 
 class CustomerAddressViewSet(viewsets.ModelViewSet):
     queryset = models.CustomerAddress.objects.all()

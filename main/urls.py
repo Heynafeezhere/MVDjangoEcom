@@ -28,8 +28,9 @@ urlpatterns = [
     #Orders
     path('orders/', views.orderList.as_view(), name='orderList'),
     path('order/', views.orderRequestHandler, name='orderRequestHandler'),
-    path('order/order-item/', views.orderItemRequestHandler, name='orderItemRequestHandler'),
     path('order/<int:pk>/', views.orderDetail.as_view(), name='orderDetail'),
+    path('order/order-item/', views.orderItemRequestHandler, name='orderItemRequestHandler'),
+    path('order/update-order-status/', views.updateOrderStatusHandler, name='updateOrderStatusHandler'),
     ]
 
 urlpatterns += routers.urls

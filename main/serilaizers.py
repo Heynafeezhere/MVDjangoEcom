@@ -57,7 +57,7 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Order
-        fields = ['id','customer','order_date','status','total_amount','created_at','updated_at']
+        fields = ['id','customer','order_date','status','total_amount','transaction_id','payment_method','created_at','updated_at']
         depth = 1
 
 class OrderDetailSerializer(serializers.ModelSerializer):

@@ -93,6 +93,8 @@ class Order(models.Model):
         default='pending'
     )
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_id = models.CharField(max_length=255, null=True, blank=True)
+    payment_method = models.CharField(max_length=30, null=True, blank=True)
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
