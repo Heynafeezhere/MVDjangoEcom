@@ -20,11 +20,16 @@ urlpatterns = [
     #Product Categories
     path('categories/', views.CategoryList.as_view(), name='categoryList'),
     path('category/<int:pk>/', views.CategoryDetail.as_view(), name='categoryDetail'),
+
     #Customers
     path('customers/', views.CustomerList.as_view(), name='customerList'),
     path('customer/<int:pk>/', views.CustomerDetail.as_view(), name='customerDetail'),
     path('customer/register/', views.customerRegister, name='custemerRegister'),
     path('customer/login/', views.customerLogin, name='customerLogin'),
+    path('customer/<int:pk>/wishlist/', views.CustomerWishlist.as_view(), name='wishlist'),
+    path('customer/check-wishlist/', views.checkWishlist, name='checkwishlist'),
+    path('customer/add-wishlist/', views.addToWishlist, name='addTowishlist'),
+    path('customer/remove-wishlist/<int:wishlistId>', views.reomveFromWishlist, name='reomveFromWishlist'),
     path('customer/<int:pk>/orders/', views.customerOrderItemList.as_view(), name='customerOrderItemList'),
 
     #Orders

@@ -56,7 +56,6 @@ class RelatedProductList(generics.ListCreateAPIView):
         # If a tag is provided, filter products based on the tag in the tags field
         if actualProduct:
             qs = qs.filter(category=actualProduct.category).exclude(id=product_id)  # Case-insensitive search within the tags field
-            qs = qs.order_by('-updated_at')
         return qs
 
 class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
@@ -204,7 +203,6 @@ def orderRequestHandler(request):
     if request.method == 'POST':
         userId = request.POST.get('customer')
         total_amount = request.POST.get('total_amount')
-        print(userId)
         user = models.User.objects.filter(id=userId).first()
         if(user == None): 
             return JsonResponse(
@@ -235,30 +233,23 @@ def orderRequestHandler(request):
 @csrf_exempt
 def orderItemRequestHandler(request):
    if request.method == 'POST':
-        # Read the JSON body of the request
         data = json.loads(request.body)
 
-        # Get the order item array from the payload
         order_item_array = data.get('order', [])
         if not order_item_array:
             return JsonResponse({'error': 'No order items provided'}, status=400)
 
-        # Extract order ID from the first item (assuming all items belong to the same order)
         orderId = order_item_array[0].get('orderId')
 
-        # Fetch the order from the database in a single query
         order = models.Order.objects.filter(id=orderId).first()
         if order is None:
             return JsonResponse({'error': 'Order not found'}, status=404)
 
-        # Collect all product IDs to fetch them in one query
         product_ids = [item['productId'] for item in order_item_array]
         products = models.Product.objects.filter(id__in=product_ids)
 
-        # Create a dictionary for fast lookup by productId
         product_dict = {product.id: product for product in products}
 
-        # Prepare a list to hold OrderItem instances for bulk creation
         order_items_to_create = []
 
         for item in order_item_array:
@@ -309,6 +300,7 @@ def updateOrderStatusHandler(request):
 
         order.status = orderStatus
         order.transaction_id = transaction_id
+        order.payment_method = payment_method
         order.save()
 
         return JsonResponse({'bool': True, 'message': 'Order status updated successfully'}, status=200)
@@ -336,3 +328,101 @@ class CategoryList(generics.ListCreateAPIView):
 class CategoryDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.ProductCategory.objects.all()
     serializer_class = serilaizers.CategoryDetailSerializer
+
+class CustomerWishlist(generics.ListCreateAPIView):
+    queryset = models.Wishlist.objects.all()
+    serializer_class = serilaizers.WishlistSerializer
+    pagination_class = CustomPaginations.CustomOrderItemListPagination
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        customer_id = self.kwargs['pk']
+        qs = qs.filter(customer__customer_id=customer_id)
+        qs = qs.order_by('-updated_at')
+        return qs
+
+
+@csrf_exempt
+def addToWishlist(request):
+    if request.method == 'POST':
+        customerId = request.POST.get('customerId')
+        productId = request.POST.get('productId')
+
+        customer = models.Customer.objects.filter(customer_id=customerId).first()
+        
+        if customer is None :
+            return JsonResponse(
+                {
+                    'error': 'No such customer Found'
+                },
+                status=404 
+            )
+        
+        product = models.Product.objects.filter(id=productId).first()
+
+        if product is None :
+            return JsonResponse(
+                {
+                    'error': 'No such product found'
+                },
+                status=404  
+            )
+        
+        wishlist_exists = models.Wishlist.objects.filter(customer = customer, product=product).exists()
+
+        if(wishlist_exists):
+            return JsonResponse(
+                {
+                    'error': 'product already added to wishlist'
+                },
+                status=400
+            )
+        
+        wishlist = models.Wishlist.objects.create(
+            customer=customer,
+            product=product,
+        )
+        wishlist.save()
+
+
+        return JsonResponse(
+            {
+                'bool': True,
+                'message': 'Wishlist Added successfully'
+            },
+            status=201  # HTTP status code 201 for successful resource creation
+        )
+
+@csrf_exempt
+def checkWishlist(request):
+    customerId = request.GET.get('customerId')
+    productId = request.GET.get('productId')
+    
+    wishlist_exists = models.Wishlist.objects.filter(customer__user__id = customerId, product__id=productId).exists()
+    
+    return JsonResponse(
+        {
+            'bool': wishlist_exists
+        },
+        status=200
+        )
+
+@csrf_exempt
+def reomveFromWishlist(request,wishlistId):
+    if request.method == 'DELETE':
+        wishlist_exists = models.Wishlist.objects.filter(id = wishlistId).first()
+    
+        if(wishlist_exists):
+            wishlist_exists.delete()
+            return JsonResponse(
+                    {'bool': True, 'message': 'Product removed from wishlist successfully'},
+                    status=200
+                )
+        return JsonResponse(
+            {
+                'error': 'Item not found'
+            },
+            status=404
+            )
+        
+            

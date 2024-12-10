@@ -36,6 +36,8 @@ class ProductCategory(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta :
+        verbose_name_plural = 'Product Categories'
     def __str__(self):
         return self.title
     
@@ -70,6 +72,14 @@ class Customer(models.Model):
     # Additional fields
     date_joined = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+
+    customer_id = models.IntegerField(null=True, blank=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        # Set customer_id to user.id before saving
+        if self.user:
+            self.customer_id = self.user.id
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.user.username
@@ -137,6 +147,8 @@ class CustomerAddress(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta :
+        verbose_name_plural = 'Customer addresses'
     def __str__(self):
         return f'{self.address_line1}'
 
@@ -170,3 +182,13 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return self.image.url
+    
+class Wishlist(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='customer_wishlist')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='product_wishlist')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.product.name} - {self.customer.user.first_name} '

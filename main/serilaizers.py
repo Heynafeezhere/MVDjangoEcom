@@ -42,7 +42,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     customer_addresses = serializers.StringRelatedField(many=True, read_only=True)
     class Meta:
         model = models.Customer
-        fields = ['id','user','phone','customer_addresses']
+        fields = ['id','customer_id','user','phone','customer_addresses']
         depth = 1
 
 
@@ -99,4 +99,9 @@ class CategoryDetailSerializer(serializers.ModelSerializer):
         fields = ['id','title','description','created_at','updated_at']
         depth = 1
 
-
+#wishList
+class WishlistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Wishlist
+        fields = ['id','customer','product','created_at','updated_at']
+        depth = 1

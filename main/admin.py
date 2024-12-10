@@ -11,6 +11,7 @@ admin.site.register(models.OrderItem)
 admin.site.register(models.CustomerAddress)     
 admin.site.register(models.ProductRating)     
 admin.site.register(models.ProductImage)     
+admin.site.register(models.Wishlist)     
 
 # class ProductImageInline(admin.StackedInline):
 #     model = models.ProductImage
