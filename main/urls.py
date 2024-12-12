@@ -13,6 +13,7 @@ urlpatterns = [
     path('vendors/', views.VendorList.as_view(), name='vendorList'),
     path('vendor/<int:pk>/', views.VendorDetail.as_view(), name='vendorDetail'),
     path('vendor/register/', views.vendorRegister, name='vendorRegister'),
+    path('vendor/login/', views.vendorLogin, name='vendorLogin'),
 
     #Products
     path('products/', views.ProductList.as_view(), name='productList'),

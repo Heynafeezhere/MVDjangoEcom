@@ -103,6 +103,55 @@ def vendorRegister(request):
 
 
 
+@csrf_exempt
+def vendorLogin(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        # Fetch the user object based on email
+        user_obj = models.User.objects.filter(email=email.lower()).first()
+
+        if user_obj:
+            username = user_obj.username
+            user = authenticate(username=username, password=password)
+
+            if user is not None:
+                # Check if the user is a vendor
+                vendor_obj = models.Vendor.objects.filter(user=user).first()
+                if vendor_obj:
+                    return JsonResponse(
+                        {
+                            'bool': True,
+                            'userId': user.id,
+                            'user': user.username,
+                            'userType': 'vendor'  # Indicate that this is a vendor
+                        },
+                        status=200  # HTTP status code 200 for successful authentication
+                    )
+                else:
+                    return JsonResponse(
+                        {
+                            'error': 'User is not a vendor'
+                        },
+                        status=404  # HTTP status code 404 for user not found
+                    )
+            else:
+                return JsonResponse(
+                    {
+                        'error': 'Invalid credentials'
+                    },
+                    status=401  # HTTP status code 401 for unauthorized access
+                )
+        else:
+            return JsonResponse(
+                {
+                    'error': 'User not found'
+                },
+                status=404  # HTTP status code 404 for user not found
+            )
+
+
 class ProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serilaizers.ProductListSerializer
@@ -174,6 +223,7 @@ def customerLogin(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
+        # Fetch the user object based on email
         user_obj = models.User.objects.filter(email=email.lower()).first()
 
         if user_obj:
@@ -181,14 +231,25 @@ def customerLogin(request):
             user = authenticate(username=username, password=password)
 
             if user is not None:
-                return JsonResponse(
-                    {
-                        'bool': True,
-                        'userId': user.id,
-                        'user': user.username
-                    },
-                    status=200  # HTTP status code 200 for successful authentication
-                )
+                # Check if the user is a customer
+                customer_obj = models.Customer.objects.filter(user=user).first()
+                if customer_obj:
+                    return JsonResponse(
+                        {
+                            'bool': True,
+                            'userId': user.id,
+                            'user': user.username,
+                            'userType': 'customer'  # Indicate that this is a customer
+                        },
+                        status=200  # HTTP status code 200 for successful authentication
+                    )
+                else:
+                    return JsonResponse(
+                        {
+                            'error': 'User is not a customer'
+                        },
+                        status=404  # HTTP status code 404 for user not found
+                    )
             else:
                 return JsonResponse(
                     {
@@ -203,6 +264,7 @@ def customerLogin(request):
                 },
                 status=404  # HTTP status code 404 for user not found
             )
+
 
 
 @csrf_exempt
