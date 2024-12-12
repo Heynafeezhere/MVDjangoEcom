@@ -1,13 +1,15 @@
 import json
+from django.forms import ValidationError
 from django.http import JsonResponse
 from django.db import transaction
-from rest_framework import generics,permissions,viewsets
+from rest_framework import generics,permissions,viewsets,status
 from django.shortcuts import render
 from . import serilaizers
 from . import models
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
 from . import CustomPaginations
+from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
 # Create your views here.
 class VendorList(generics.ListCreateAPIView):
@@ -437,4 +439,14 @@ def reomveFromWishlist(request,wishlistId):
             status=404
             )
         
-            
+class CustomerAddressList(generics.ListCreateAPIView):
+    queryset = models.CustomerAddress.objects.all()
+    serializer_class = serilaizers.CustomerAddressSerializer
+    pagination_class = CustomPaginations.CustomAddressListPagination
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        customer_id = self.kwargs['pk']
+        qs = qs.filter(customer__customer_id=customer_id)
+        qs = qs.order_by('-updated_at')
+        return qs

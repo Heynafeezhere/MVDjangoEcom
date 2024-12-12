@@ -29,6 +29,7 @@ urlpatterns = [
     path('customer/<int:pk>/', views.CustomerDetail.as_view(), name='customerDetail'),
     path('customer/register/', views.customerRegister, name='custemerRegister'),
     path('customer/login/', views.customerLogin, name='customerLogin'),
+    path('customer/address-list/<int:pk>/', views.CustomerAddressList.as_view(), name='customerAddressList'),
     path('customer/<int:pk>/wishlist/', views.CustomerWishlist.as_view(), name='wishlist'),
     path('customer/check-wishlist/', views.checkWishlist, name='checkwishlist'),
     path('customer/add-wishlist/', views.addToWishlist, name='addTowishlist'),
