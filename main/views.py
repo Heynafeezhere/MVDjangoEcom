@@ -21,6 +21,88 @@ class VendorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Vendor.objects.all()
     serializer_class = serilaizers.VendorDetailSerializer
 
+
+@csrf_exempt
+def vendorRegister(request):
+    if request.method == 'POST':
+        firstName = request.POST.get('first_name')
+        lastName = request.POST.get('last_name')
+        userName = request.POST.get('user_name')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        description = request.POST.get('description')
+        contact_person = request.POST.get('contact_person')
+        phoneNumber = request.POST.get('phone')
+        address_line1 = request.POST.get('address_line1')
+        address_line2 = request.POST.get('address_line2')
+        city = request.POST.get('city')
+        state = request.POST.get('state')
+        zip_code = request.POST.get('zip_code')
+        country = request.POST.get('country')
+        website = request.POST.get('website')
+
+        user_email = models.User.objects.filter(email=email.lower()).first()
+        user_name = models.User.objects.filter(username=userName.lower()).first()
+        phoneNumberCheck = models.Vendor.objects.filter(phone=phoneNumber).first()
+
+        if user_email :
+            return JsonResponse(
+                {
+                    'error': 'Email already exists'
+                },
+                status=400  # HTTP status code 400 for bad request
+            )
+        if user_name :
+            return JsonResponse(
+                {
+                    'error': 'Username already exists'
+                },
+                status=400  # HTTP status code 400 for bad request
+            )
+        if phoneNumberCheck :
+            return JsonResponse(
+                {
+                    'error': 'Phone number already exists'
+                },
+                status=400  # HTTP status code 400 for bad request
+            )
+
+        user = models.User.objects.create_user(
+            username=userName,
+            email=email,
+            first_name=firstName,
+            last_name=lastName,
+            password=password
+        )
+        user.save()
+
+        vendor = models.Vendor.objects.create(
+            user = user,
+            description = description,
+            contact_person = contact_person,
+            address_line1 = address_line1,
+            address_line2 = address_line2,
+            city = city,
+            state = state,
+            zip_code = zip_code,
+            country = country,
+            website = website,
+            phone = phoneNumber
+        )
+        vendor.save()
+
+        return JsonResponse(
+            {
+                'bool': True,
+                'user': user.username,
+                'userId': user.id,
+                'message': 'User registered successfully'
+            },
+            status=201  # HTTP status code 201 for successful resource creation
+        )
+
+
+
 class ProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serilaizers.ProductListSerializer
@@ -450,3 +532,15 @@ class CustomerAddressList(generics.ListCreateAPIView):
         qs = qs.filter(customer__customer_id=customer_id)
         qs = qs.order_by('-updated_at')
         return qs
+
+def customerDashboard(request,customer_id):
+    addressCount = models.CustomerAddress.objects.filter(customer__customer_id = customer_id).count()
+    wishlistCount = models.Wishlist.objects.filter(customer__customer_id = customer_id).count()
+    orderCount = models.OrderItem.objects.filter(order__customer__customer_id = customer_id).count()
+
+    return JsonResponse(
+        {
+            'addressCount': addressCount,
+            'wishlistCount': wishlistCount,
+            'ordersCount': orderCount    
+    },status=200)

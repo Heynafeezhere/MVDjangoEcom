@@ -12,6 +12,8 @@ urlpatterns = [
     #Vendors
     path('vendors/', views.VendorList.as_view(), name='vendorList'),
     path('vendor/<int:pk>/', views.VendorDetail.as_view(), name='vendorDetail'),
+    path('vendor/register/', views.vendorRegister, name='vendorRegister'),
+
     #Products
     path('products/', views.ProductList.as_view(), name='productList'),
     path('products/<str:tag>/', views.TaggedProductList.as_view(), name='taggedProductList'),
@@ -24,6 +26,7 @@ urlpatterns = [
     #Users
     path('user/<int:pk>/', views.UserDetail.as_view(), name='userDetail'),
 
+
     #Customers
     path('customers/', views.CustomerList.as_view(), name='customerList'),
     path('customer/<int:pk>/', views.CustomerDetail.as_view(), name='customerDetail'),
@@ -35,6 +38,8 @@ urlpatterns = [
     path('customer/add-wishlist/', views.addToWishlist, name='addTowishlist'),
     path('customer/remove-wishlist/<int:wishlistId>', views.reomveFromWishlist, name='reomveFromWishlist'),
     path('customer/<int:pk>/orders/', views.customerOrderItemList.as_view(), name='customerOrderItemList'),
+    path('customer/dashboard/<int:customer_id>/', views.customerDashboard, name='customerDashboard'),
+
 
     #Orders
     path('orders/', views.orderList.as_view(), name='orderList'),
@@ -43,5 +48,6 @@ urlpatterns = [
     path('order/order-item/', views.orderItemRequestHandler, name='orderItemRequestHandler'),
     path('order/update-order-status/', views.updateOrderStatusHandler, name='updateOrderStatusHandler'),
     ]
+
 
 urlpatterns += routers.urls
