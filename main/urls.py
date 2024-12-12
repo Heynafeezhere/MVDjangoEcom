@@ -21,6 +21,9 @@ urlpatterns = [
     path('categories/', views.CategoryList.as_view(), name='categoryList'),
     path('category/<int:pk>/', views.CategoryDetail.as_view(), name='categoryDetail'),
 
+    #Users
+    path('user/<int:pk>/', views.UserDetail.as_view(), name='userDetail'),
+
     #Customers
     path('customers/', views.CustomerList.as_view(), name='customerList'),
     path('customer/<int:pk>/', views.CustomerDetail.as_view(), name='customerDetail'),

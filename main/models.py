@@ -68,7 +68,7 @@ class Customer(models.Model):
     # Basic customer details
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     phone =  PhoneNumberField(null=False, blank=False, unique=True)
-
+    profile_image = models.ImageField(upload_to="customer_images/", null=True)
     # Additional fields
     date_joined = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)

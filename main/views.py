@@ -8,6 +8,7 @@ from . import models
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
 from . import CustomPaginations
+from rest_framework.exceptions import NotFound
 # Create your views here.
 class VendorList(generics.ListCreateAPIView):
     queryset = models.Vendor.objects.all()
@@ -62,6 +63,10 @@ class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serilaizers.ProductDetailSerializer
 
+class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = models.User.objects.all()
+    serializer_class = serilaizers.UserDetailSerializer
+
 class CustomerList(generics.ListCreateAPIView):
     queryset = models.Customer.objects.all()
     serializer_class = serilaizers.CustomerSerializer
@@ -70,7 +75,14 @@ class CustomerList(generics.ListCreateAPIView):
 class CustomerDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Customer.objects.all()
     serializer_class = serilaizers.CustomerDetailSerializer
-
+    
+    def get_object(self):
+        # Override get_object to get by customer_id instead of pk
+        customer_id = self.kwargs.get('pk')
+        try:
+            return models.Customer.objects.get(customer_id=customer_id)
+        except models.Customer.DoesNotExist:
+            raise NotFound(detail="No Customer matches the given query.")
 
 @csrf_exempt
 def customerLogin(request):

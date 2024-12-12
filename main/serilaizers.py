@@ -37,12 +37,18 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         fields = ['id','category','vendor','name','slug','product_tags','description','price','stock_quantity','product_ratings','product_images','demoLink']
         depth = 1
 
+class UserDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.User
+        fields = ['id','first_name','last_name','username','email']
+        depth = 1
+
 #Customer
 class CustomerSerializer(serializers.ModelSerializer):
     customer_addresses = serializers.StringRelatedField(many=True, read_only=True)
     class Meta:
         model = models.Customer
-        fields = ['id','customer_id','user','phone','customer_addresses']
+        fields = ['id','user','phone','customer_addresses']
         depth = 1
 
 
@@ -50,7 +56,7 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
     customer_addresses = serializers.StringRelatedField(many=True, read_only=True)
     class Meta:
         model = models.Customer
-        fields = ['id','user','phone','customer_addresses']
+        fields = ['id','customer_id','user','phone','customer_addresses','date_joined','last_updated','profile_image']
         depth = 1
 
 #Order  
