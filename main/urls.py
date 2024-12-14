@@ -14,9 +14,12 @@ urlpatterns = [
     path('vendor/<int:pk>/', views.VendorDetail.as_view(), name='vendorDetail'),
     path('vendor/register/', views.vendorRegister, name='vendorRegister'),
     path('vendor/login/', views.vendorLogin, name='vendorLogin'),
+    path('vendor/<int:pk>/products/', views.ProductList.as_view(), name='vendorProductList'),
+
 
     #Products
     path('products/', views.ProductList.as_view(), name='productList'),
+    path('products/add-product/', views.addProduct, name='addProduct'),
     path('products/<str:tag>/', views.TaggedProductList.as_view(), name='taggedProductList'),
     path('product/related-products/<int:pk>/', views.RelatedProductList.as_view(), name='relatedProductList'),
     path('product/<int:pk>/', views.ProductDetail.as_view(), name='productDetail'),

@@ -123,7 +123,7 @@ def vendorLogin(request):
                     return JsonResponse(
                         {
                             'bool': True,
-                            'userId': user.id,
+                            'userId': vendor_obj.id,
                             'user': user.username,
                             'userType': 'vendor'  # Indicate that this is a vendor
                         },
@@ -164,6 +164,77 @@ class ProductList(generics.ListCreateAPIView):
         if 'fetch_limit' in self.request.query_params:
             qs = qs[:int(self.request.query_params['fetch_limit'])]
         return qs
+
+    def vendor_products(self):
+        qs = super().get_queryset()
+        vendor_id = self.kwargs['pk']
+        qs = qs.filter(vendor__id=vendor_id)
+        return qs
+    
+@csrf_exempt
+def addProduct(request):
+    if request.method == 'POST':        
+        # Extract vendor and category information
+        vendorId = request.POST.get('vendor')
+        vendor = models.Vendor.objects.filter(id=vendorId).first()
+        
+        categoryId = request.POST.get('category')
+        category = models.ProductCategory.objects.filter(id=categoryId).first()
+
+        # Return error if vendor or category is not found
+        if vendor is None:
+            return JsonResponse({'bool': False, 'message': 'Vendor not found'}, status=404)
+        
+        if category is None:
+            return JsonResponse({'bool': False, 'message': 'Category not found'}, status=404)
+        
+        # Extract and validate product fields
+        name = request.POST.get('name')
+        description = request.POST.get('description', '')
+        item_id = request.POST.get('item_id')
+        slug = request.POST.get('slug')
+        price = request.POST.get('price')
+        stock_quantity = request.POST.get('stock_quantity')
+        tags = request.POST.get('tags', '')
+        image = request.FILES.get('image', None)
+
+        # Basic validation of required fields
+        if not name or not price or not stock_quantity:
+            return JsonResponse({'bool': False, 'message': 'Name, price, and stock quantity are required fields'}, status=400)
+
+        try:
+            price = float(price)  # Ensure price is a float
+        except ValueError:
+            return JsonResponse({'bool': False, 'message': 'Invalid price format'}, status=400)
+        
+        try:
+            stock_quantity = int(stock_quantity)  # Ensure stock_quantity is an integer
+        except ValueError:
+            return JsonResponse({'bool': False, 'message': 'Invalid stock quantity format'}, status=400)
+
+        # Create the product
+        try:
+            product = models.Product.objects.create(
+                vendor=vendor,
+                category=category,
+                name=name,
+                item_id=item_id,
+                slug=slug,
+                description=description,
+                price=price,
+                stock_quantity=stock_quantity,
+                tags=tags,
+                image=image
+            )
+            
+            product.save()  # Save the product to the database
+
+            return JsonResponse({'bool': True, 'message': 'Product added successfully'}, status=200)
+        
+        except ValidationError as e:
+            return JsonResponse({'bool': False, 'message': f'Error creating product: {str(e)}'}, status=400)
+
+    return JsonResponse({'bool': False, 'message': 'Invalid request method'}, status=405)
 
 class TaggedProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all()
@@ -556,6 +627,14 @@ def checkWishlist(request):
     customerId = request.GET.get('customerId')
     productId = request.GET.get('productId')
     
+    if customerId is None or productId is None:
+        return JsonResponse(
+            {
+                'error': 'Missing required parameters'
+            },
+            status=400
+        )
+
     wishlist_exists = models.Wishlist.objects.filter(customer__user__id = customerId, product__id=productId).exists()
     
     return JsonResponse(
