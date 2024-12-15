@@ -170,7 +170,20 @@ class ProductList(generics.ListCreateAPIView):
         vendor_id = self.kwargs['pk']
         qs = qs.filter(vendor__id=vendor_id)
         return qs
-    
+
+class productImages(generics.ListCreateAPIView):
+    queryset = models.ProductImage.objects.all()
+    serializer_class = serilaizers.ProductImageSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        product_id = self.kwargs['product_id']
+        vendor_id = self.kwargs['vendor_id']
+        qs = qs.filter(product__id=product_id,product__vendor__id=vendor_id)
+        return qs
+
+
+
 @csrf_exempt
 def addProduct(request):
     if request.method == 'POST':        
@@ -229,13 +242,93 @@ def addProduct(request):
             
             product.save()  # Save the product to the database
 
-            return JsonResponse({'bool': True, 'message': 'Product added successfully'}, status=200)
+            return JsonResponse({'bool': True, 'product_id': product.id, 'message': 'Product added successfully'}, status=201)
         
         except ValidationError as e:
-            return JsonResponse({'bool': False, 'message': f'Error creating product: {str(e)}'}, status=400)
+            return JsonResponse({'bool': False,  'message': f'Error creating product: {str(e)}'}, status=400)
 
     return JsonResponse({'bool': False, 'message': 'Invalid request method'}, status=405)
 
+@csrf_exempt
+def updateProduct(request, pk):
+    if request.method == 'PUT':
+        # Parse the request body as JSON
+        body = request.body.decode('utf-8')
+        data = json.loads(body)
+        
+        vendorId = data.get('vendor')
+        vendor = models.Vendor.objects.filter(id=vendorId).first()
+        
+        categoryId = data.get('category')
+        category = models.ProductCategory.objects.filter(id=categoryId).first()
+
+        if vendor is None:
+            return JsonResponse({'bool': False, 'message': 'Vendor not found'}, status=404)
+        
+        if category is None:
+            return JsonResponse({'bool': False, 'message': 'Category not found'}, status=404)
+        
+        # Extract product fields
+        name = data.get('name')
+        description = data.get('description', '')
+        itemId = data.get('item_id')
+        slug = data.get('slug')
+        price = data.get('price')
+        stock_quantity = data.get('stock_quantity')
+        tags = data.get('tags', '')
+        image = data.get('image', None)
+
+        # Basic validation of required fields
+        if not name or not price or not stock_quantity:
+            return JsonResponse({'bool': False, 'message': 'Name, price, and stock quantity are required fields'}, status=400)
+
+        try:
+            price = float(price)  # Ensure price is a float
+        except ValueError:
+            return JsonResponse({'bool': False, 'message': 'Invalid price format'}, status=400)
+        
+        try:
+            stock_quantity = int(stock_quantity)  # Ensure stock_quantity is an integer
+        except ValueError:
+            return JsonResponse({'bool': False, 'message': 'Invalid stock quantity format'}, status=400)
+
+        # Handling image upload via request.FILES
+        uploaded_image = request.FILES.get('image')  # This will get the file from the request
+        image_url = None
+        
+        if uploaded_image:
+            # Save the image to the media directory
+            image_name = default_storage.save(f'product_images/{uploaded_image.name}', uploaded_image)
+            image_url = default_storage.url(image_name)  # This will return the URL of the uploaded image
+
+        # Update the product
+        try:
+            product = models.Product.objects.filter(id=pk, vendor=vendor).first()
+            if not product:
+                return JsonResponse({'bool': False, 'message': 'Product not found'}, status=404)
+
+            product.name = name
+            product.slug = slug
+            product.description = description
+            product.item_id = itemId
+            product.price = price
+            product.stock_quantity = stock_quantity
+            product.tags = tags
+            product.category = category
+
+            # Update the image if a new one is uploaded
+            if image_url:
+                product.image = image_url  # Save the new image URL
+            
+            product.save()
+
+            return JsonResponse({'bool': True, 'message': 'Product updated successfully'}, status=200)
+        
+        except ValidationError as e:
+            return JsonResponse({'bool': False, 'message': f'Error updating product: {str(e)}'}, status=400)
+
+    return JsonResponse({'bool': False, 'message': 'Invalid request method'}, status=405)
+    
 class TaggedProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serilaizers.ProductListSerializer
@@ -267,6 +360,17 @@ class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serilaizers.ProductDetailSerializer
 
+    def get_object(self):
+        # Override get_object to get by customer_id instead of pk
+        product_id = self.kwargs.get('pk')
+        print(product_id)
+        try:
+            return models.Product.objects.get(id=product_id)
+        except models.Product.DoesNotExist:
+            raise NotFound(detail="No Product matches the given query.")
+
+    
+
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = models.User.objects.all()
     serializer_class = serilaizers.UserDetailSerializer
@@ -287,6 +391,7 @@ class CustomerDetail(generics.RetrieveUpdateDestroyAPIView):
             return models.Customer.objects.get(customer_id=customer_id)
         except models.Customer.DoesNotExist:
             raise NotFound(detail="No Customer matches the given query.")
+        
 
 @csrf_exempt
 def customerLogin(request):

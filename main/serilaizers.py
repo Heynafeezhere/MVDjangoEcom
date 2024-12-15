@@ -21,12 +21,12 @@ class ProductListSerializer(serializers.ModelSerializer):
         model = models.Product
         fields = ['id','category','item_id','vendor','name','slug','status','product_tags','description','price','stock_quantity','product_ratings','image','tags']
         depth = 1
-
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ProductImage
-        fields = ['id','product','image','created_at','alt_text']
+        fields = ['id', 'product', 'image', 'created_at', 'alt_text']
         depth = 1
+
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     product_ratings = serializers.StringRelatedField(many=True, read_only=True)
@@ -34,7 +34,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     class Meta:
         many=True
         model = models.Product
-        fields = ['id','category','item_id','vendor','name','slug','product_tags','description','price','stock_quantity','product_ratings','product_images']
+        fields = ['id','category','item_id','vendor_id','name','slug','product_tags','description','price','status','stock_quantity','product_ratings','image','product_images','tags']
         depth = 1
 
 class UserDetailSerializer(serializers.ModelSerializer):
@@ -58,7 +58,6 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
         model = models.Customer
         fields = ['id','customer_id','user','phone','customer_addresses','date_joined','last_updated','profile_image']
         depth = 1
-
 #Order  
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
@@ -77,11 +76,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
         model = models.OrderItem
         fields = ['id','order','product','quantity','unit_price','created_at','updated_at']
         depth = 1
-
-
-from rest_framework import serializers
-from . import models
-from rest_framework.exceptions import ValidationError
 
 class CustomerAddressSerializer(serializers.ModelSerializer):
     customer_id = serializers.CharField(source='customer.customer_id')
