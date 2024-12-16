@@ -26,6 +26,10 @@ class ProductImageSerializer(serializers.ModelSerializer):
         model = models.ProductImage
         fields = ['id', 'product', 'image', 'created_at', 'alt_text']
         depth = 1
+    def create(self, validated_data):
+        print(validated_data)
+        return super().create(validated_data)
+        
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):

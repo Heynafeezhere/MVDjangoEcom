@@ -16,6 +16,9 @@ urlpatterns = [
     path('vendor/login/', views.vendorLogin, name='vendorLogin'),
     path('vendor/<int:pk>/products/', views.ProductList.as_view(), name='vendorProductList'),
     path('vendor/<int:vendor_id>/products/<int:product_id>/images/', views.productImages.as_view(), name='productImages'),
+    path('vendor/<int:vendor_id>/products/<int:product_id>/update-images/', views.uploadImages, name='uploadImages'),
+    path('vendor/<int:pk>/order-items/', views.VendorOrderItemList.as_view(), name='vendorOrderItemList'),
+
 
 
     #Products
@@ -26,6 +29,7 @@ urlpatterns = [
     path('products/<str:tag>/', views.TaggedProductList.as_view(), name='taggedProductList'),
     path('product/related-products/<int:pk>/', views.RelatedProductList.as_view(), name='relatedProductList'),
     path('product/<int:pk>/', views.ProductDetail.as_view(), name='productDetail'),
+    
     #Product Categories
     path('categories/', views.CategoryList.as_view(), name='categoryList'),
     path('category/<int:pk>/', views.CategoryDetail.as_view(), name='categoryDetail'),

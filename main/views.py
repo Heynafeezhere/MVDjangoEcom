@@ -329,6 +329,42 @@ def updateProduct(request, pk):
 
     return JsonResponse({'bool': False, 'message': 'Invalid request method'}, status=405)
     
+@csrf_exempt
+def uploadImages(request, vendor_id, product_id):
+    if request.method == 'POST':
+        # Get vendor and product
+        vendor = models.Vendor.objects.filter(id=vendor_id).first()
+        product = models.Product.objects.filter(id=product_id, vendor__id=vendor_id).first()
+        
+        if vendor is None:
+            return JsonResponse({'bool': False, 'message': 'Vendor not found'}, status=404)
+        
+        if product is None:
+            return JsonResponse({'bool': False, 'message': 'Product not found'}, status=404)
+
+        # List of image fields
+        uploaded_images = []
+
+        for i in range(1,6):
+            if(request.FILES.get(f'image{i}')):
+                uploaded_images.append(request.FILES.get(f'image{i}')) 
+        
+        saved_images = models.ProductImage.objects.filter(product=product,product__vendor=vendor)
+        saved_images.delete()
+
+        for image in uploaded_images:    
+            # Create a new ProductImage instance and save it
+            product_image = models.ProductImage.objects.create(
+                product=product,
+                image=image
+                )
+            product_image.save()
+        
+        
+        return JsonResponse({'bool': True, 'message': 'Images uploaded successfully'}, status=201)
+
+    return JsonResponse({'bool': False, 'message': 'Invalid request method'}, status=405)
+
 class TaggedProductList(generics.ListCreateAPIView):
     queryset = models.Product.objects.all()
     serializer_class = serilaizers.ProductListSerializer
@@ -528,6 +564,19 @@ class customerOrderItemList(generics.ListAPIView):
         qs = super().get_queryset()
         customer_id = self.kwargs['pk']
         qs = qs.filter(order__customer__user__id=customer_id)
+        qs = qs.order_by('-updated_at')
+        return qs
+
+class VendorOrderItemList(generics.ListAPIView):
+    queryset = models.OrderItem.objects.all()
+    serializer_class = serilaizers.OrderItemSerializer
+    pagination_class = CustomPaginations.CustomOrderItemListPagination
+
+    # print(queryset)
+    def get_queryset(self):
+        qs = super().get_queryset()
+        vendorId = self.kwargs['pk']
+        qs = qs.filter(product__vendor__id=vendorId)
         qs = qs.order_by('-updated_at')
         return qs
     
