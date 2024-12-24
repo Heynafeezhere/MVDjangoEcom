@@ -11,6 +11,8 @@ from django.contrib.auth import authenticate
 from . import CustomPaginations
 from rest_framework.views import APIView
 from rest_framework.exceptions import NotFound
+from rest_framework_simplejwt.tokens import RefreshToken
+
 # Create your views here.
 class VendorList(generics.ListCreateAPIView):
     queryset = models.Vendor.objects.all()
@@ -445,12 +447,15 @@ def customerLogin(request):
             if user is not None:
                 # Check if the user is a customer
                 customer_obj = models.Customer.objects.filter(user=user).first()
+                refresh =  RefreshToken.for_user(user)
                 if customer_obj:
                     return JsonResponse(
                         {
                             'bool': True,
                             'userId': user.id,
                             'user': user.username,
+                            'refreshToken': str(refresh),
+                            'accessToken': str(refresh.access_token),
                             'userType': 'customer'  # Indicate that this is a customer
                         },
                         status=200  # HTTP status code 200 for successful authentication
@@ -523,6 +528,7 @@ def customerRegister(request):
             password=password
         )
         user.save()
+
 
         customer = models.Customer.objects.create(
             user = user,
