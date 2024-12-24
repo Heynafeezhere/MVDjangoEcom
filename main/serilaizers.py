@@ -1,6 +1,17 @@
 from rest_framework import serializers
 from . import models
 from django.core.exceptions import ValidationError
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        # Add custom claims
+        token['username'] = user.username
+        print(token)
+
+        return token
 
 class VendorSerializer(serializers.ModelSerializer):
     class Meta:

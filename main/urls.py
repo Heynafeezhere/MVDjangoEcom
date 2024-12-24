@@ -1,14 +1,22 @@
 from django.urls import path
 
 from . import views
-
 from rest_framework import routers
+
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 routers = routers.DefaultRouter()
 routers.register('addresses', views.CustomerAddressViewSet)
 routers.register('productratings', views.ProductRatingViewSet)
 
 urlpatterns = [
+    #token
+    path('token/', views.CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+ 
     #Vendors
     path('vendors/', views.VendorList.as_view(), name='vendorList'),
     path('vendor/<int:pk>/', views.VendorDetail.as_view(), name='vendorDetail'),
